@@ -64,7 +64,7 @@ def draw(draw_info, algo_name, ascending):
     controls = draw_info.FONT.render("R - Reset | A - Ascending | D - Descending | SPACE - Start Sorting", 1, draw_info.TEXT_COLOR)
     draw_info.window.blit(controls, ((draw_info.width / 2) - (controls.get_width()/2), 45))
 
-    sorting = draw_info.FONT.render("I - Insertion Sort | B - Bubble Sort | S - Selection Sort", 1, draw_info.TEXT_COLOR)
+    sorting = draw_info.FONT.render("I - Insertion Sort | B - Bubble Sort | S - Selection Sort | M - Merge Sort | Q - Quick Sort", 1, draw_info.TEXT_COLOR)
     draw_info.window.blit(sorting, ((draw_info.width / 2) - (sorting.get_width()/2), 75))
 
     draw_list(draw_info)
@@ -144,6 +144,75 @@ def selection_sort(draw_info, ascending=True):
             lst[i], lst[max_idx] = lst[max_idx], lst[i]
             draw_list(draw_info, {i: draw_info.GREEN, max_idx:draw_info.COLUMBIA_BLUE}, True)
             yield True
+
+    return lst
+
+def merge_sort(draw_info, ascending=True):
+    lst = draw_info.lst
+
+    def merge(left, right, start, end):
+        i = j = 0
+        merged = []
+
+        while i < len(left) and j < len(right):
+            if (left[i] < right[j] and ascending) or (left[i] > right[j] and not ascending):
+                merged.append(left[i])
+                i += 1
+            else:
+                merged.append(right[j])
+                j += 1
+
+        while i < len(left):
+            merged.append(left[i])
+            i += 1
+
+        while j < len(right):
+            merged.append(right[j])
+            j += 1
+
+        lst[start:end] = merged
+        draw_list(draw_info, {k: draw_info.COLUMBIA_BLUE for k in range(start, end)}, True)
+        yield True
+
+    def merge_sort_recursive(start, end):
+        if end - start > 1:
+            mid = (start + end) // 2
+            yield from merge_sort_recursive(start, mid)
+            yield from merge_sort_recursive(mid, end)
+            yield from merge(lst[start:mid], lst[mid:end], start, end)
+
+    yield from merge_sort_recursive(0, len(lst))
+
+    return lst
+
+def quick_sort(draw_info, ascending=True):
+    lst = draw_info.lst
+
+    def partition(low, high):
+        pivot = lst[high]
+        i = low - 1
+
+        for j in range(low, high):
+            if (lst[j] < pivot and ascending) or (lst[j] > pivot and not ascending):
+                i += 1
+                lst[i], lst[j] = lst[j], lst[i]
+                draw_list(draw_info, {i: draw_info.COLUMBIA_BLUE, j: draw_info.COLUMBIA_BLUE}, True)
+                yield True
+
+        lst[i + 1], lst[high] = lst[high], lst[i + 1]
+        draw_list(draw_info, {i + 1: draw_info.GREEN, high: draw_info.GREEN}, True)
+        yield True
+
+        return i + 1
+
+    def quick_sort_recursive(low, high):
+        if low < high:
+            pi = yield from partition(low, high)
+
+            yield from quick_sort_recursive(low, pi - 1)
+            yield from quick_sort_recursive(pi + 1, high)
+
+    yield from quick_sort_recursive(0, len(lst) - 1)
 
     return lst
 
@@ -242,6 +311,14 @@ def main():
             elif event.key == pygame.K_s and not sorting:
                 sorting_algorithm = selection_sort
                 sorting_algorithm_name = "SELECTION SORT"
+
+            elif event.key == pygame.K_m and not sorting:
+                sorting_algorithm = merge_sort
+                sorting_algorithm_name = "MERGE SORT"
+
+            elif event.key == pygame.K_q and not sorting:
+                sorting_algorithm = quick_sort
+                sorting_algorithm_name = "QUICK SORT"
 
     pygame.quit()
 
